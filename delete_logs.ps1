@@ -1,4 +1,4 @@
-﻿$path = "C:\ProgramData\Microsoft\Diagnosis\ETLLogs"
+$path = "C:\ProgramData\Microsoft\Diagnosis\ETLLogs"
 
 $sizeBefore = (Get-ChildItem -LiteralPath $path -Recurse -Force -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
 if ($null -eq $sizeBefore) { $sizeBefore = 0 }
