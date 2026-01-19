@@ -2,7 +2,7 @@
 ## Powershell
 
 
-Запуск PowerShell-скрипта напрямую из GitHub:
+Running powershell script directly from GitHub:
 
 
 Delete logs:
