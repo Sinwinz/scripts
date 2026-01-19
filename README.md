@@ -7,7 +7,7 @@
 
 Delete logs:
 ```powershell
-  irm "https://raw.githubusercontent.com/Sinwinz/scripts/main/script_name.ps1" | iex
+  irm "https://raw.githubusercontent.com/Sinwinz/scripts/main/delete_logs.ps1" | iex
 ```
 
 
