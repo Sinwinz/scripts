@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# ============================================
+# Script for creating SSL certificate via certbot
+# ============================================
+
+echo "================================================"
+echo "   SSL Certificate Creation via Certbot"
+echo "================================================"
+echo ""
+
+# Request domain name from user
+read -p "Enter root domain (example: example.com): " DOMAIN
+
+if [[ -z "$DOMAIN" ]]; then
+    echo "Error: domain name cannot be empty."
+    exit 1
+fi
+
+# Optional email
+echo ""
+read -p "Enter email for Let's Encrypt notifications (or press Enter to skip): " EMAIL
+
+if [[ -z "$EMAIL" ]]; then
+    EMAIL_ARGS="--register-unsafely-without-email"
+    EMAIL_SUMMARY="not specified (--register-unsafely-without-email)"
+else
+    EMAIL_ARGS="--email \"$EMAIL\""
+    EMAIL_SUMMARY="$EMAIL"
+fi
+
+echo ""
+echo "Select certificate type:"
+echo "  1) Wildcard  — covers *.${DOMAIN} and ${DOMAIN}"
+echo "  2) Subdomain — covers a specific subdomain (e.g. app.${DOMAIN})"
+echo "  3) Both      — wildcard + specific subdomain(s)"
+echo ""
+read -p "Your choice (1/2/3): " MODE
+
+DOMAINS_ARGS=""
+
+case "$MODE" in
+    1)
+        DOMAINS_ARGS="-d \"*.$DOMAIN\" -d \"$DOMAIN\""
+        SUMMARY="Wildcard: *.$DOMAIN and $DOMAIN"
+        ;;
+    2)
+        echo ""
+        read -p "Enter subdomain(s) separated by space (e.g. app.${DOMAIN} api.${DOMAIN}): " -a SUBDOMAINS
+
+        if [[ ${#SUBDOMAINS[@]} -eq 0 ]]; then
+            echo "Error: no subdomains entered."
+            exit 1
+        fi
+
+        for SUB in "${SUBDOMAINS[@]}"; do
+            DOMAINS_ARGS="$DOMAINS_ARGS -d \"$SUB\""
+        done
+        SUMMARY="Subdomains: ${SUBDOMAINS[*]}"
+        ;;
+    3)
+        echo ""
+        read -p "Enter additional subdomain(s) separated by space (e.g. app.${DOMAIN} api.${DOMAIN}): " -a SUBDOMAINS
+
+        DOMAINS_ARGS="-d \"*.$DOMAIN\" -d \"$DOMAIN\""
+        for SUB in "${SUBDOMAINS[@]}"; do
+            DOMAINS_ARGS="$DOMAINS_ARGS -d \"$SUB\""
+        done
+        SUMMARY="Wildcard: *.$DOMAIN and $DOMAIN + extra: ${SUBDOMAINS[*]}"
+        ;;
+    *)
+        echo "Error: invalid choice."
+        exit 1
+        ;;
+esac
+
+echo ""
+echo "================================================"
+echo "Domain:      $DOMAIN"
+echo "Email:       $EMAIL_SUMMARY"
+echo "Certificate: $SUMMARY"
+echo "================================================"
+echo ""
+read -p "Proceed with certificate creation? (y/n): " CONFIRM
+
+if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
+    echo "Cancelled."
+    exit 0
+fi
+
+echo ""
+echo "Running certbot..."
+echo ""
+
+eval certbot certonly \
+    --manual \
+    --agree-tos \
+    --preferred-challenges dns \
+    $EMAIL_ARGS \
+    $DOMAINS_ARGS
+
+if [[ $? -eq 0 ]]; then
+    echo ""
+    echo "Certificate successfully created!"
+    echo "Path to certificate: /etc/letsencrypt/live/$DOMAIN/"
+else
+    echo ""
+    echo "Error occurred during certificate creation."
+    echo "Check the certbot output above for details."
+    exit 1
+fi
